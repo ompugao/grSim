@@ -305,7 +305,8 @@ void Robot::drawLabel()
     dReal ty = rx*fz-fx*rz;
     dReal tz = fx*ry-fy*rx;
     w->g->setTransform(pos,rot);
-    w->g->useTexture((m_rob_id-1) + 11 + 10*((on)?0:1));
+    //w->g->useTexture((m_rob_id-1) + 11 + 10*((on)?0:1));
+    w->g->useTexture(this->texture_id);
     glShadeModel (GL_FLAT);
     glDisable(GL_LIGHTING);
     glEnable(GL_BLEND);

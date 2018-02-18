@@ -328,10 +328,12 @@ void MainWindow::update()
         }
         else
         {            
-            int R = glwidget->ssl->selected%ROBOT_COUNT;
-            int T = glwidget->ssl->selected/ROBOT_COUNT;
-            if (T==0) selectinglabel->setText(QString("%1:Blue").arg(R));
-            else selectinglabel->setText(QString("%1:Yellow").arg(R));
+            if (glwidget->ssl->selected < BLUE_ROBOT_COUNT) {
+                selectinglabel->setText(QString("%1:Blue").arg(glwidget->ssl->selected));
+            }
+            else {
+                selectinglabel->setText(QString("%1:Yellow").arg(glwidget->ssl->selected - BLUE_ROBOT_COUNT));
+            }
         }
     }
     else selectinglabel->setVisible(false);

@@ -48,6 +48,7 @@ public:
     bool selected;
     dReal select_x,select_y,select_z;    
     QImage *img,*number;
+    int texture_id;
     class Wheel
     {
       public:

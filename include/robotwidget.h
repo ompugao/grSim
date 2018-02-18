@@ -23,6 +23,7 @@ Copyright (C) 2011, Parsian Robotic Center (eew.aut.ac.ir/~parsian/grsim)
 #include <QComboBox>
 #include <QLabel>
 #include <QPushButton>
+#include <QStandardItemModel>
 
 #include "getpositionwidget.h"
 
@@ -33,6 +34,7 @@ public:
     RobotWidget(QWidget* parent);
     void setPicture(QImage* img);
     QComboBox *teamCombo,*robotCombo;
+    QStandardItemModel *blueRobots, *yellowRobots;
     QLabel *robotpic;
     QLabel *vellabel,*acclabel;
     QPushButton *resetBtn,*locateBtn;
@@ -42,6 +44,7 @@ public:
 public slots:
     void changeRobotOnOff(int,bool);
     void setPoseBtnClicked();
+    void changeRobots(int teamid);
 };
 
 #endif // ROBOTWIDGET_H

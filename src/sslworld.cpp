@@ -50,8 +50,10 @@ dReal fric(dReal f)
 
 int robotIndex(int robot,int team)
 {
-    if (robot >= ROBOT_COUNT) return -1;
-    return robot + team*ROBOT_COUNT;
+    if (! ((team == 0 && robot < BLUE_ROBOT_COUNT) || (team == 1 && robot < YELLOW_ROBOT_COUNT))) {
+        return -1;
+    }
+    return robot + team*BLUE_ROBOT_COUNT;
 }
 
 bool wheelCallBack(dGeomID o1,dGeomID o2,PSurface* s)
@@ -94,7 +96,7 @@ bool rayCallback(dGeomID o1,dGeomID o2,PSurface* s)
     dGeomID obj;
     if (o1==_w->ray->geom) obj = o2;
     else obj = o1;
-    for (int i=0;i<ROBOT_COUNT * 2;i++)
+    for (int i=0;i<ROBOT_COUNT;i++)
     {
         if (_w->robots[i]->chassis->geom==obj || _w->robots[i]->dummy->geom==obj)
         {
@@ -225,15 +227,15 @@ SSLWorld::SSLWorld(QGLWidget* parent,ConfigWidget* _cfg,RobotsFomation *form1,Ro
     p->addObject(ray);
     for (int i=0;i<10;i++)
         p->addObject(walls[i]);
-    const int wheeltexid = 4 * ROBOT_COUNT + 12 + 1 ; //37 for 6 robots
+    const int wheeltexid = 2 * ROBOT_COUNT + 12 + 1 ; //37 for 6 robots
 
 
     cfg->robotSettings = cfg->blueSettings;
-    for (int k=0;k<ROBOT_COUNT;k++)
+    for (int k=0;k<BLUE_ROBOT_COUNT;k++)
         robots[k] = new Robot(p,ball,cfg,-form1->x[k],form1->y[k],ROBOT_START_Z(cfg),ROBOT_GRAY,ROBOT_GRAY,ROBOT_GRAY,k+1,wheeltexid,1);
     cfg->robotSettings = cfg->yellowSettings;
-    for (int k=0;k<ROBOT_COUNT;k++)
-        robots[k+ROBOT_COUNT] = new Robot(p,ball,cfg,form2->x[k],form2->y[k],ROBOT_START_Z(cfg),ROBOT_GRAY,ROBOT_GRAY,ROBOT_GRAY,k+ROBOT_COUNT+1,wheeltexid,-1);//XXX
+    for (int k=0;k<YELLOW_ROBOT_COUNT;k++)
+        robots[k+BLUE_ROBOT_COUNT] = new Robot(p,ball,cfg,form2->x[k],form2->y[k],ROBOT_START_Z(cfg),ROBOT_GRAY,ROBOT_GRAY,ROBOT_GRAY,k+ROBOT_COUNT+1,wheeltexid,-1);//XXX
 
     p->initAllObjects();
 
@@ -241,7 +243,7 @@ SSLWorld::SSLWorld(QGLWidget* parent,ConfigWidget* _cfg,RobotsFomation *form1,Ro
 
     p->createSurface(ray,ground)->callback = rayCallback;
     p->createSurface(ray,ball)->callback = rayCallback;
-    for (int k=0;k<ROBOT_COUNT * 2;k++)
+    for (int k=0;k<ROBOT_COUNT;k++)
     {
         p->createSurface(ray,robots[k]->chassis)->callback = rayCallback;
         p->createSurface(ray,robots[k]->dummy)->callback = rayCallback;
@@ -266,7 +268,7 @@ SSLWorld::SSLWorld(QGLWidget* parent,ConfigWidget* _cfg,RobotsFomation *form1,Ro
     for (int i = 0; i < WALL_COUNT; i++)
         p->createSurface(ball, walls[i])->surface = ballwithwall.surface;
     
-    for (int k = 0; k < 2 * ROBOT_COUNT; k++)
+    for (int k = 0; k < ROBOT_COUNT; k++)
     {
         p->createSurface(robots[k]->chassis,ground);
         for (int j = 0; j < WALL_COUNT; j++)
@@ -282,7 +284,7 @@ SSLWorld::SSLWorld(QGLWidget* parent,ConfigWidget* _cfg,RobotsFomation *form1,Ro
             w_g->usefdir1=true;
             w_g->callback=wheelCallBack;
         }
-        for (int j = k + 1; j < 2 * ROBOT_COUNT; j++)
+        for (int j = k + 1; j < ROBOT_COUNT; j++)
         {            
             if (k != j)
             {
@@ -309,7 +311,7 @@ QImage* createBlob(char yb,int i,QImage** res)
     return *res;
 }
 
-QImage* createNumber(int i,int r,int g,int b,int a)
+QImage* createNumber(int num,int r,int g,int b,int a)
 {
     QImage* img = new QImage(32,32,QImage::Format_ARGB32);
     QPainter *p = new QPainter();
@@ -333,7 +335,7 @@ QImage* createNumber(int i,int r,int g,int b,int a)
     f.setBold(true);
     f.setPointSize(26);
     p->setFont(f);
-    p->drawText(img->width()/2-15,img->height()/2-15,30,30,Qt::AlignCenter,QString("%1").arg(i));
+    p->drawText(img->width()/2-15,img->height()/2-15,30,30,Qt::AlignCenter,QString("%1").arg(num));
     p->end();
     delete p;
     return img;
@@ -345,17 +347,21 @@ void SSLWorld::glinit()
     g->loadTexture(new QImage(":/grass.png"));
 
     // Loading Robot textures for each robot
-    for (int i = 0; i < ROBOT_COUNT; i++)
-        g->loadTexture(createBlob('b', i, &robots[i]->img));
+    for (int i = 0; i < BLUE_ROBOT_COUNT; i++) {
+        Robot* robot = robots[i];
+        robot->texture_id = g->loadTexture(createBlob('b', i, &(robot->img)));
+    }
 
-    for (int i = 0; i < ROBOT_COUNT; i++)
-        g->loadTexture(createBlob('y', i, &robots[ROBOT_COUNT + i]->img));
+    for (int i = 0; i < YELLOW_ROBOT_COUNT; i++) {
+        Robot* robot = robots[BLUE_ROBOT_COUNT + i];
+        robot->texture_id = g->loadTexture(createBlob('y', i, &(robot->img)));
+    }
 
     // Creating number textures
-    for (int i=0; i<ROBOT_COUNT;i++)
+    for (int i=0; i<BLUE_ROBOT_COUNT;i++)
         g->loadTexture(createNumber(i,15,193,225,255));
 
-    for (int i=0; i<ROBOT_COUNT;i++)
+    for (int i=0; i<YELLOW_ROBOT_COUNT;i++)
         g->loadTexture(createNumber(i,0xff,0xff,0,255));
 
     // Loading sky textures
@@ -423,7 +429,7 @@ void SSLWorld::step(dReal dt)
                 +(by-xyz[1])*(by-xyz[1])
                 +(bz-xyz[2])*(bz-xyz[2]);
     }
-    for (int k=0;k<ROBOT_COUNT * 2;k++)
+    for (int k=0;k<ROBOT_COUNT;k++)
     {
         if (robots[k]->selected)
         {
@@ -441,19 +447,19 @@ void SSLWorld::step(dReal dt)
     if (best_k>=0) robots[best_k]->chassis->setColor(ROBOT_GRAY*2,ROBOT_GRAY*1.5,ROBOT_GRAY*1.5);
     selected = best_k;
     ball->tag = -1;
-    for (int k=0;k<ROBOT_COUNT * 2;k++)
+    for (int k=0;k<ROBOT_COUNT;k++)
     {
         robots[k]->step();
         robots[k]->selected = false;
     }
     p->draw();
     //g->drawSkybox(31,32,33,34,35,36);
-    g->drawSkybox(4 * ROBOT_COUNT + 6 + 1, //31 for 6 robot
-                  4 * ROBOT_COUNT + 6 + 2, //32 for 6 robot
-                  4 * ROBOT_COUNT + 6 + 3, //33 for 6 robot
-                  4 * ROBOT_COUNT + 6 + 4, //34 for 6 robot
-                  4 * ROBOT_COUNT + 6 + 5, //31 for 6 robot
-                  4 * ROBOT_COUNT + 6 + 6);//36 for 6 robot
+    g->drawSkybox(2 * ROBOT_COUNT + 6 + 1, //31 for 6 robot
+                  2 * ROBOT_COUNT + 6 + 2, //32 for 6 robot
+                  2 * ROBOT_COUNT + 6 + 3, //33 for 6 robot
+                  2 * ROBOT_COUNT + 6 + 4, //34 for 6 robot
+                  2 * ROBOT_COUNT + 6 + 5, //31 for 6 robot
+                  2 * ROBOT_COUNT + 6 + 6);//36 for 6 robot
 
     dMatrix3 R;
 
@@ -500,7 +506,7 @@ void SSLWorld::recvActions()
                     if (!packet.commands().robot_commands(i).has_id()) continue;
                     int k = packet.commands().robot_commands(i).id();
                     int id = robotIndex(k, team);
-                    if ((id < 0) || (id >= ROBOT_COUNT*2)) continue;
+                    if ((id < 0) || (id >= ROBOT_COUNT)) continue;
                     bool wheels = false;
                     if (packet.commands().robot_commands(i).has_wheelsspeed())
                     {
@@ -571,7 +577,7 @@ void SSLWorld::recvActions()
                     if (packet.replacement().robots(i).has_dir()) dir = packet.replacement().robots(i).dir();
                     if (packet.replacement().robots(i).has_turnon()) turnon = packet.replacement().robots(i).turnon();
                     int id = robotIndex(k, team);
-                    if ((id < 0) || (id >= ROBOT_COUNT*2)) continue;
+                    if ((id < 0) || (id >= ROBOT_COUNT)) continue;
                     robots[id]->setXY(x,y);
                     robots[id]->resetRobot();
                     robots[id]->setDir(dir);
@@ -679,7 +685,7 @@ SSL_WrapperPacket* SSLWorld::generatePacket(int cam_id)
             vball->set_confidence(0.9 + rand0_1()*0.1);
         }
     }
-    for(int i = 0; i < ROBOT_COUNT; i++){
+    for(int i = 0; i < BLUE_ROBOT_COUNT; i++){
         if ((cfg->vanishing()==false) || (rand0_1() > cfg->blue_team_vanishing()))
         {
             if (!robots[i]->on) continue;
@@ -697,7 +703,7 @@ SSL_WrapperPacket* SSLWorld::generatePacket(int cam_id)
             }
         }
     }
-    for(int i = ROBOT_COUNT; i < ROBOT_COUNT*2; i++){
+    for(int i = BLUE_ROBOT_COUNT; i < ROBOT_COUNT; i++){
         if ((cfg->vanishing()==false) || (rand0_1() > cfg->yellow_team_vanishing()))
         {
             if (!robots[i]->on) continue;
@@ -705,7 +711,7 @@ SSL_WrapperPacket* SSLWorld::generatePacket(int cam_id)
             dir = robots[i]->getDir();
             if (visibleInCam(cam_id, x, y)) {
                 SSL_DetectionRobot* rob = packet->mutable_detection()->add_robots_yellow();
-                rob->set_robot_id(i-ROBOT_COUNT);
+                rob->set_robot_id(i-BLUE_ROBOT_COUNT);
                 rob->set_pixel_x(x*1000.0f);
                 rob->set_pixel_y(y*1000.0f);
                 rob->set_confidence(1);
@@ -812,13 +818,26 @@ void SSLWorld::sendVisionBuffer()
     }
 }
 
-void RobotsFomation::setAll(dReal* xx,dReal *yy)
+void RobotsFomation::setBluePositions(dReal* xx, dReal* yy) 
 {
-    for (int i=0;i<ROBOT_COUNT;i++)
+    for (int i=0;i<BLUE_ROBOT_COUNT;i++)
     {
         x[i] = xx[i];
         y[i] = yy[i];
     }
+}
+void RobotsFomation::setYellowPositions(dReal* xx, dReal* yy) 
+{
+    for (int i = BLUE_ROBOT_COUNT; i < ROBOT_COUNT; i++) {
+        x[i] = xx[6 + i];
+        y[i] = yy[6 + i];
+    }
+}
+
+void RobotsFomation::setAll(dReal* xx,dReal *yy)
+{
+    setBluePositions(xx, yy);
+    setYellowPositions(xx, yy);
 }
 
 RobotsFomation::RobotsFomation(int type)
@@ -902,7 +921,9 @@ void RobotsFomation::resetRobots(Robot** r,int team)
 {
     dReal dir=-1;
     if (team==1) dir = 1;
-    for (int k=0;k<ROBOT_COUNT;k++)
+
+    int num_robots = (team == 0 ? BLUE_ROBOT_COUNT : YELLOW_ROBOT_COUNT);
+    for (int k=0;k<num_robots;k++)
     {
         r[robotIndex(k,team)]->setXY(x[k]*dir,y[k]);
         r[robotIndex(k,team)]->resetRobot();

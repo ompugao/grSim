@@ -81,7 +81,7 @@ public:
     PGround* ground;
     PRay* ray;
     PFixedBox* walls[WALL_COUNT];
-    int selected;
+    int selected; // -1: none, -2: ball, 0~: robot index
     bool show3DCursor;
     dReal cursor_x,cursor_y,cursor_z;
     dReal cursor_radius;
@@ -104,6 +104,8 @@ class RobotsFomation {
         dReal y[MAX_ROBOT_COUNT];
         RobotsFomation(int type);
         void setAll(dReal *xx,dReal *yy);
+        void setBluePositions(dReal *xx,dReal *yy);
+        void setYellowPositions(dReal *xx,dReal *yy);
         void loadFromFile(const QString& filename);
         void resetRobots(Robot** r,int team);
 };

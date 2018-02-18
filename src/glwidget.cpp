@@ -142,8 +142,13 @@ void GLWidget::selectRobot()
 {
     if (clicked_robot!=-1)
     {
-        Current_robot = clicked_robot%ROBOT_COUNT;
-        Current_team = clicked_robot/ROBOT_COUNT;
+        if (clicked_robot < BLUE_ROBOT_COUNT) {
+            Current_robot = clicked_robot;
+            Current_team = 0;
+        } else {
+            Current_robot = clicked_robot - BLUE_ROBOT_COUNT;
+            Current_team = 1;
+        }
         emit selectedRobot();
     }
 }
@@ -394,13 +399,13 @@ void GLWidget::paintGL()
     }
     step();    
     QFont font;
-    for (int i=0;i<ROBOT_COUNT*2;i++)
+    for (int i=0;i<ROBOT_COUNT;i++)
     {
         dReal xx,yy;
         ssl->robots[i]->getXY(xx,yy);
-        if (i>=ROBOT_COUNT) qglColor(Qt::yellow);
+        if (i>=BLUE_ROBOT_COUNT) qglColor(Qt::yellow);
         else qglColor(Qt::cyan);
-        renderText(xx,yy,0.3,QString::number(i%ROBOT_COUNT),font);
+        renderText(xx,yy,0.3,QString::number((i < BLUE_ROBOT_COUNT ? i : i-BLUE_ROBOT_COUNT)),font);
         if (!ssl->robots[i]->on){
             qglColor(Qt::red);
             font.setBold(true);
@@ -539,8 +544,14 @@ void GLWidget::reform(int team,const QString& act)
     if (act==tr("Put all outside")) forms[1]->resetRobots(ssl->robots,team);
     if (act==tr("Put all out of field")) forms[4]->resetRobots(ssl->robots,team);
 
+    int num_robots = 0;
+    if (team == 0) {
+        num_robots = BLUE_ROBOT_COUNT;
+    } else {
+        num_robots = YELLOW_ROBOT_COUNT;
+    }
     if(act==tr("Turn all off")) {
-        for(int i=0; i<ROBOT_COUNT; i++) {
+        for(int i=0; i<num_robots; i++) {
             int k = robotIndex(i, team);
             if(ssl->robots[k]->on==true) {
                 ssl->robots[k]->on = false;
@@ -551,7 +562,7 @@ void GLWidget::reform(int team,const QString& act)
     }
 
     if(act==tr("Turn all on")) {
-        for(int i=0; i<ROBOT_COUNT; i++) {
+        for(int i=0; i<num_robots; i++) {
             int k = robotIndex(i, team);
             if(ssl->robots[k]->on==false) {
                 ssl->robots[k]->on = true;

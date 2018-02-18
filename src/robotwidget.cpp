@@ -34,12 +34,18 @@ RobotWidget::RobotWidget(QWidget* parent)
     teamCombo->addItem("Blue");
     teamCombo->addItem("Yellow");
     robotCombo = new QComboBox(this);
+    blueRobots = new QStandardItemModel();
+    yellowRobots = new QStandardItemModel();
 
-    // Add items to the combo box dynamically 
-    for (int i=0; i<ROBOT_COUNT; i++){
+    for (int i=0; i<BLUE_ROBOT_COUNT; i++){
       QString item=QString::number(i);
-      robotCombo->addItem(item);
+      blueRobots->appendRow(new QStandardItem(item));
     }
+    for (int i=0; i<YELLOW_ROBOT_COUNT; i++){
+      QString item=QString::number(i);
+      yellowRobots->appendRow(new QStandardItem(item));
+    }
+    robotCombo->setModel(blueRobots);
 
     // robotCombo->addItem("0");
     // robotCombo->addItem("1");
@@ -70,6 +76,7 @@ RobotWidget::RobotWidget(QWidget* parent)
     setWidget(widget);
     getPoseWidget = new GetPositionWidget();
     QObject::connect(setPoseBtn,SIGNAL(clicked()),this,SLOT(setPoseBtnClicked()));
+    QObject::connect(teamCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(changeRobots(int)));
 }
 
 void RobotWidget::setPicture(QImage* img)
@@ -88,4 +95,11 @@ void RobotWidget::changeRobotOnOff(int _id,bool a)
 void RobotWidget::setPoseBtnClicked()
 {
     getPoseWidget->show();
+}
+void RobotWidget::changeRobots(int id) {
+    if (id == 0) {
+        robotCombo->setModel(blueRobots);
+    } else {
+        robotCombo->setModel(yellowRobots);
+    }
 }
