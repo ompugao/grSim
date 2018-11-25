@@ -102,7 +102,7 @@ find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 list(APPEND libs ${PROTOBUF_LIBRARIES})
 
-protobuf_generate_cpp(PROTO_CPP PROTO_H
+set(PROTO_FILES 
     src/proto/messages_robocup_ssl_detection.proto
     src/proto/messages_robocup_ssl_geometry.proto
     src/proto/messages_robocup_ssl_wrapper.proto
@@ -110,7 +110,10 @@ protobuf_generate_cpp(PROTO_CPP PROTO_H
     src/proto/grSim_Replacement.proto
     src/proto/grSim_Commands.proto
     src/proto/grSim_Packet.proto
-)
+    src/proto/grSim_RobotStatus.proto)
+protobuf_generate_cpp(PROTO_CPP PROTO_H ${PROTO_FILES})
+protobuf_generate_python(PROTO_PY ${PROTO_FILES})
+add_custom_target(generate_protobuf_py ALL DEPENDS ${PROTO_PY})
 
 qt4_add_resources(RESOURCES
     resources/textures.qrc
@@ -215,6 +218,7 @@ elseif(WIN32)
     install(DIRECTORY bin DESTINATION .
             FILES_MATCHING PATTERN "*.dll")
     set(CPACK_PACKAGE_EXECUTABLES ${app} ${app})
+    install(FILES ${PROTO_FILES} DESTINATION share/${app}/proto/)
 else()
     set(app ${CMAKE_PROJECT_NAME_LOWER})
     add_executable(${app} ${srcs})
@@ -222,6 +226,7 @@ else()
     install(TARGETS ${app} DESTINATION bin)
     configure_file(include/grsim/config.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/grsim/config.h)
     install(DIRECTORY config DESTINATION share/${app})
+    install(FILES ${PROTO_FILES} DESTINATION share/${app}/proto/)
     install(FILES resources/grsim.desktop DESTINATION share/applications)
     install(FILES resources/icons/grsim.svg DESTINATION share/icons/hicolor/scalable/apps)
 endif()

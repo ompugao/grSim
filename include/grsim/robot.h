@@ -33,6 +33,7 @@ protected:
     dReal m_r,m_g,m_b;
     dReal m_dir;
     int m_rob_id;
+    std::string m_robot_type_;
     bool firsttime;
     bool last_state;
 public:    
@@ -215,7 +216,7 @@ public:
     };
     Drive* drive;
 
-    Robot() : firsttime(true), on(true) {
+    Robot(const std::string& robottype = "default") : firsttime(true), on(true), m_robot_type_(robottype) {
     }
     //Robot(PWorld* world,PBall* ball,ConfigWidget* _cfg,dReal x,dReal y,dReal z,dReal r,dReal g,dReal b,int rob_id,int wheeltexid,int dir);
     virtual ~Robot();
@@ -235,6 +236,9 @@ public:
     virtual int getID();
     PBall* getBall();
     PWorld* getWorld();
+    const std::string& getRobotType() {
+        return m_robot_type_;
+    }
 };
 
 

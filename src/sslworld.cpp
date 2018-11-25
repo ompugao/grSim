@@ -32,6 +32,7 @@ Copyright (C) 2011, Parsian Robotic Center (eew.aut.ac.ir/~parsian/grsim)
 #include "grSim_Packet.pb.h"
 #include "grSim_Commands.pb.h"
 #include "grSim_Replacement.pb.h"
+#include "grSim_RobotStatus.pb.h"
 #include "messages_robocup_ssl_detection.pb.h"
 #include "messages_robocup_ssl_geometry.pb.h"
 #include "messages_robocup_ssl_refbox_log.pb.h"
@@ -603,6 +604,7 @@ void SSLWorld::recvActions()
     QHostAddress sender;
     quint16 port;
     grSim_Packet packet;
+
     while (commandSocket->hasPendingDatagrams())
     {
         int size = commandSocket->readDatagram(in_buffer, 65536, &sender, &port);
@@ -662,14 +664,30 @@ void SSLWorld::recvActions()
                     }
                     robots[id]->kicker->setRoller(rolling);
 
-                    char status = 0;
-                    status = k;
-                    if (robots[id]->kicker->isTouchingBall()) status = status | 8;
-                    if (robots[id]->on) status = status | 240;
-                    if (team == 0)
-                        blueStatusSocket->writeDatagram(&status,1,sender,cfg->BlueStatusSendPort());
-                    else
-                        yellowStatusSocket->writeDatagram(&status,1,sender,cfg->YellowStatusSendPort());
+                    grSim_Robot_Status status;
+                    status.set_timestamp(timer->elapsed()/1000.0);
+                    status.set_id(id);
+                    status.set_isteamyellow(team);
+                    status.set_touchingball(robots[id]->kicker->isTouchingBall());
+                    status.set_powerison(robots[id]->on);
+                    status.set_robottype(robots[id]->getRobotType());
+
+                    QByteArray datagram;
+                    datagram.resize(status.ByteSize());
+                    bool success = status.SerializeToArray(datagram.data(), datagram.size());
+                    if(!success) {
+                        logStatus(QString("Serializing status packet to array failed."), QColor("orange"));
+                    }
+
+                    quint64 bytes_sent;
+                    if (team == 0) {
+                        bytes_sent = blueStatusSocket->writeDatagram(datagram,sender,cfg->BlueStatusSendPort());
+                    } else {
+                        bytes_sent = yellowStatusSocket->writeDatagram(datagram,sender,cfg->YellowStatusSendPort());
+                    }
+                    if (bytes_sent != datagram.size()) {
+                        logStatus(QString("Sending status datagram to UDP failed (maybe too large?). Size was: %1 byte(s).").arg(datagram.size()), QColor("orange"));
+                    }
 
                 }
             }
